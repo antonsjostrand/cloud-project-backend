@@ -61,19 +61,20 @@ app.post('/register', async(req, res) => {
 });
 
 app.post('/login', async(req, res) => {
-
     //Get user credentials from request body. username and password.
     let user = req.body;
 
     //Authenticate user credentials towards database
-    let status = await database.login(user);
-    if(status === 'success'){
+    let result = await database.login(user);
+    if(result !== 'failure'){
         console.log('User exists!');
+        console.log(result);
 
         //Get the token!
         jwt.sign({user: user}, secretKey,  {expiresIn: '10h'}, (err, token) => {
             res.json({
-                token: token
+                token: token,
+                privilege: result.privilege
             })
         });
 
@@ -89,6 +90,63 @@ app.post('/logout', async(req, res) =>{
 
 });
 
+/**
+ * Configuration endpoints
+ * 
+ */
+
+ //Change password
+app.post('/password', middleware.ensureToken, async(req, res) => {
+
+    var authenticationData;
+
+    //Verify the token
+    jwt.verify(req.token, secretKey, (err, authData) => {
+        if(err) {
+            //Token error
+            res.sendStatus(403);
+        } else {
+            //Token verified proceed to change password!
+            authenticationData = authData;
+        }
+    });
+
+    console.log("Authentication data: ");
+    console.log(authenticationData);
+
+    let data = {};
+    data.data = req.body;
+    data.authData = authenticationData;
+
+    //Authenticate user credentials towards database
+    let result = await database.changePassword(data);
+    if(result === 'success'){
+        console.log('Password changed..');
+
+        //Create new token with the new password
+        let user = {};
+        user.username = data.authData.user.username;
+        user.password = data.data.newPassword;
+
+        jwt.sign({user: user}, secretKey,  {expiresIn: '10h'}, (err, token) => {
+            res.json({
+                message: 'New token due to password change',
+                token: token
+            })
+        });
+
+    }else{
+        console.log('Password change failed..');
+        res.sendStatus(403);
+    }
+
+
+});
+
+ /**
+  * Workout endpoints
+  * 
+  */
 //Save workout
 app.post('/workout', middleware.ensureToken, async(req, res) => {
 

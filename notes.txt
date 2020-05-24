@@ -20,4 +20,5 @@ INST_CON_NAME: hkr-run-api:europe-north1:hkr-run-instance
 root-password: 4lc9qKCoh37cwMrm
 
 Build container:
+Go to the directory containing the dockerfile then run:
 gcloud builds submit --tag gcr.io/hkr-run-api/hkrrun

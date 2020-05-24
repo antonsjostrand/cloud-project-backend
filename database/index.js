@@ -47,15 +47,48 @@ async function login(userCredentials){
     console.log('Result: ' + result);
 
     if(result.username === userCredentials.username){
-        return 'success';
+        return result;
     }else {
         return 'failure';
     }
 }
 
-/*
-* Workout methods
-*/
+/**
+ * Configuration methods
+ * 
+ */
+async function changePassword(data){
+    console.log(data);
+
+    //Use the auth data to make sure that the old password entered match the actual old password
+    let oldPassword = data.authData.user.password;
+    let enteredOldPassword = data.data.oldPassword;
+
+    console.log("Actual old password: " + oldPassword);
+    console.log("Entered old password: " + enteredOldPassword);
+
+    if(oldPassword === enteredOldPassword){
+        console.log('Check completed, changing password..');
+        let result = await dbChangePassword(data.data.newPassword, data.authData.user.username);
+        console.log(result);
+
+        if(result != '0'){
+            return 'success';
+        }
+
+    }else{
+        console.log('Check failed, not changing password..');
+        return 'failure';
+    }
+
+    return 'failure';
+
+}
+
+/**
+ * Workout methods
+ * 
+ */
 
 function fetchWorkoutId(){
 
@@ -131,8 +164,9 @@ async function fetchAllWorkouts(authData){
 
 }
 
-/*
+/**
  * Database functions not exported! 
+ * 
  */
 
 function dbFetchUser(userCredentials){
@@ -153,6 +187,16 @@ function dbInsertUser(newUser){
         })
     })
 }
+
+function dbChangePassword(newPassword, username){
+    return new Promise(function(resolve, reject) {
+        const sql = 'UPDATE users SET password = ? WHERE username = ?';
+        getDbPool().query(sql, [newPassword, username], (err, results) => {
+            resolve(results.affectedRows);
+        })
+    })
+}
+
 
 function dbInsertWorkout(workout){
     return new Promise(function(resolve, reject) {
@@ -185,6 +229,7 @@ module.exports = {
     fetchUserId: fetchUserId,
     registerUser: registerUser,
     login: login,
+    changePassword: changePassword,
     fetchWorkoutId: fetchWorkoutId,
     saveNewWorkout: saveNewWorkout,
     fetchOneWorkout: fetchOneWorkout,
