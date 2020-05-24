@@ -22,16 +22,25 @@ app.listen(port, () => {
     console.log('REST API listening on port', port);
 })
 
-/*
-* REST API
-* ENDPOINTS
-*/
+/**
+ * REST API ENDPOINTS
+ * Below are all endpoints available in this rest api
+ * 
+ * 
+ */
 
+/**
+ * Test endpoint to see if you can contact the REST API.
+ * 
+ */
 app.get('/', async(req, res) => {
     res.json({status: ' API is ready to be used'});
 });
 
-//Used for testing
+/**
+ * Test endpoint used for testing the token.
+ * 
+ */
 app.get('/test', middleware.ensureToken, async(req, res) => {
     //Verify the token
     jwt.verify(req.token, secretKey, (err, authData) => {
@@ -45,6 +54,15 @@ app.get('/test', middleware.ensureToken, async(req, res) => {
     });
 })
 
+/**
+ * Register endpoint, needs the following data in json format:
+ * @json 	"ssn": "9191911111",
+ * @json	"username": "test",
+ * @json	"password": "test",
+ * @json	"email": "email@gmail.com",
+ * @json	"privilege": 0
+ * 
+ */
 app.post('/register', async(req, res) => {
     //Get entered values from request body:
     //ssn, username, password, email, privilege
@@ -60,6 +78,11 @@ app.post('/register', async(req, res) => {
 
 });
 
+/**
+ * Login endpoint, needs the following data in json format:
+ * @json    "username": "username",
+ * @json    "password": "password"
+ */
 app.post('/login', async(req, res) => {
     //Get user credentials from request body. username and password.
     let user = req.body;
@@ -86,16 +109,26 @@ app.post('/login', async(req, res) => {
 
 });
 
+/**
+ * Logout endpoint, should clear the token when implemented.
+ * 
+ */
 app.post('/logout', async(req, res) =>{
 
 });
 
 /**
  * Configuration endpoints
- * 
+ * These endpoints are used to alter settings of the users.
  */
 
- //Change password
+ /**
+  * Change password, needs the following data in json format:
+  * @json   "oldPassword": "oldpassword",
+  * @json   "newPassword": "newPassword"
+  * 
+  * Will return a new token that needs to be used for future requests.
+  */
 app.post('/password', middleware.ensureToken, async(req, res) => {
 
     var authenticationData;
@@ -142,7 +175,11 @@ app.post('/password', middleware.ensureToken, async(req, res) => {
 
 });
 
-//Change email
+/**
+ * Change email, needs the following data in json format
+ * @json    "newEmail": "newemail",
+ * @json    "oldEmail": "oldemail"
+ */
 app.post('/email', middleware.ensureToken, async(req, res) => {
 
     var authenticationData;
@@ -182,11 +219,95 @@ app.post('/email', middleware.ensureToken, async(req, res) => {
 
 });
 
+/**
+ * Admin endpoints
+ * Endpoints involving deleting users and changing user data etc.
+ * 
+ */
+
+/**
+ * Endpoint used to fetch all users in the database
+ * 
+ */
+app.get('/user', middleware.ensureToken, async(req, res) => {
+    var authenticationData;
+
+    //Verify the token
+    jwt.verify(req.token, secretKey, (err, authData) => {
+        if(err) {
+            //Token error
+            res.sendStatus(403);
+        } else {
+            //Token verified proceed to change password!
+            authenticationData = authData;
+        }
+    });
+
+    //Verify that the user is indeed an admin.
+    let result = await database.isAdmin(authenticationData.user);
+
+    if(result === 'success'){
+        let users = await database.fetchAllUsers();
+        res.json({
+            message: 'Fetched users',
+            users: users
+        });
+    }else{
+        res.sendStatus(403);
+    }
+})
+
+/**
+ * Endpoint used to delete a specific user.
+ * Will also delete all workouts connected to the user.
+ * Needs the user id in json format:
+ * @json    "userId": 1
+ */
+app.delete('/user', middleware.ensureToken, async(req, res) => {
+    var authenticationData;
+
+    //Verify the token
+    jwt.verify(req.token, secretKey, (err, authData) => {
+        if(err) {
+            //Token error
+            res.sendStatus(403);
+        } else {
+            //Token verified proceed to change password!
+            authenticationData = authData;
+        }
+    });
+
+    //Verify that the user is indeed an admin.
+    let result = await database.isAdmin(authenticationData.user);
+
+    if(result === 'success'){
+        let result = await database.deleteUser(req.body.userId);
+        if(result === 'success'){
+            res.json({
+                message: 'User deleted',
+                userId: req.body.userId
+            });
+        }else{
+            res.sendStatus(405);
+        }
+    }else{
+        res.sendStatus(403);
+    }
+
+})
+
  /**
   * Workout endpoints
   * 
   */
-//Save workout
+
+/**
+ * Save new workout, needs the following data in json format:
+ * @json 	"distance": 12.5,
+ * @json	"steps": 5045,
+ * @json	"time": "30:24",
+ * @json	"userId": 0
+ */
 app.post('/workout', middleware.ensureToken, async(req, res) => {
 
     var authenticationData;
@@ -216,7 +337,10 @@ app.post('/workout', middleware.ensureToken, async(req, res) => {
     
 });
 
-//Get all workouts
+/**
+ * Get all workouts.
+ * Only needs the token in the authorization header.
+ */
 app.get('/workout', middleware.ensureToken, async(req, res) => {
     console.log('Fetching all workouts..');
     var authenticationData;

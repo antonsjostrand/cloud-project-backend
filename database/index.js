@@ -111,13 +111,59 @@ async function changeEmail(data){
 }
 
 /**
- * Workout methods
+ * Admin methods
  * 
  */
 
-function fetchWorkoutId(){
+ async function fetchAllUsers(){
+    console.log('Fetching all users..');
 
-}
+    let result = await dbFetchAllUsers();
+
+    return result;
+ }
+
+ async function deleteUser(userId){
+     console.log('Attempting to delete user..');
+
+     //First delete the workouts belonging to the user.
+     let result = await dbDeleteWorkout(userId);
+
+     if(result != '0'){
+        console.log('Workouts deleted, deleting user..');
+        let result = await dbDeleteUser(userId);
+
+        if(result != '0'){
+            console.log('User deleted..');
+            return 'success';
+        }else{
+            return 'failure';
+        }
+
+     }else{
+        return 'failure';
+     }
+ }
+
+ async function isAdmin(userData){
+    console.log('Checking if user is admin..');
+
+    let result = await dbIsAdmin(userData);
+    console.log(result);
+
+    if(result.privilege === 1){
+        console.log('User is admin..');
+        return 'success';
+    }else{
+        console.log('User is not admin..');
+        return 'failure';
+    }
+ }
+
+/**
+ * Workout methods
+ * 
+ */
 
 //Save new workout
 async function saveNewWorkout(workout, authData){
@@ -204,11 +250,48 @@ function dbFetchUser(userCredentials){
     });
 }
 
+function dbFetchAllUsers(){
+    return new Promise(function(resolve, reject) {
+        const sql = 'SELECT * FROM users';
+
+        getDbPool().query(sql, (err, results) => {
+            resolve(results);
+        });
+    });
+}
+
 function dbInsertUser(newUser){
     return new Promise(function(resolve, reject) {
         const sql = 'INSERT INTO users SET ?';
         getDbPool().query(sql, newUser, (err, results) => {
             resolve(results.insertId);
+        })
+    })
+}
+
+function dbDeleteWorkout(userId){
+    return new Promise(function(resolve, reject){
+        const sql = 'DELETE FROM workouts WHERE userId = ?';
+        getDbPool().query(sql, userId, (err, results) => {
+            resolve(results.affectedRows);
+        })
+    })
+}
+
+function dbDeleteUser(userId){
+    return new Promise(function(resolve, reject){
+        const sql = 'DELETE FROM users WHERE userId = ?';
+        getDbPool().query(sql, userId, (err, results) => {
+            resolve(results.affectedRows);
+        })
+    })
+}
+
+function dbIsAdmin(userData){
+    return new Promise(function(resolve, reject){
+        const sql = "SELECT privilege FROM users WHERE username = ? AND password = ?";
+        getDbPool().query(sql, [userData.username, userData.password], (err, results) => {
+            resolve(results[0]);
         })
     })
 }
@@ -263,9 +346,11 @@ module.exports = {
     fetchUserId: fetchUserId,
     registerUser: registerUser,
     login: login,
+    isAdmin: isAdmin,
+    deleteUser: deleteUser,
     changePassword: changePassword,
     changeEmail: changeEmail,
-    fetchWorkoutId: fetchWorkoutId,
+    fetchAllUsers: fetchAllUsers,
     saveNewWorkout: saveNewWorkout,
     fetchOneWorkout: fetchOneWorkout,
     fetchAllWorkouts: fetchAllWorkouts
