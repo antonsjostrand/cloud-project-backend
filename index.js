@@ -140,6 +140,45 @@ app.post('/password', middleware.ensureToken, async(req, res) => {
         res.sendStatus(403);
     }
 
+});
+
+//Change email
+app.post('/email', middleware.ensureToken, async(req, res) => {
+
+    var authenticationData;
+
+    //Verify the token
+    jwt.verify(req.token, secretKey, (err, authData) => {
+        if(err) {
+            //Token error
+            res.sendStatus(403);
+        } else {
+            //Token verified proceed to change password!
+            authenticationData = authData;
+        }
+    });
+
+    console.log("Authentication data: ");
+    console.log(authenticationData);
+
+    let data = {};
+    data.data = req.body;
+    data.authData = authenticationData;
+
+    //Authenticate user credentials towards database
+    let result = await database.changeEmail(data);
+    if(result === 'success'){
+        console.log('Email changed..');
+
+        res.json({
+            message: 'Changed email..',
+            newEmail: data.data.newEmail
+        });
+
+    }else{
+        console.log('Email change failed..');
+        res.sendStatus(403);
+    }
 
 });
 

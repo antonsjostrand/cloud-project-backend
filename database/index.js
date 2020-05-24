@@ -85,6 +85,31 @@ async function changePassword(data){
 
 }
 
+async function changeEmail(data){
+    console.log(data);
+
+    //Use the auth data to make sure that the old email is the same as the one entered
+    let oldEmail = data.data.oldEmail;
+    let user = await dbFetchUser(data.authData.user);
+
+    if(oldEmail === user.email){
+        console.log('Check completed, changing email..');
+        let result = await dbChangeEmail(data.data.newEmail, data.authData.user.username);
+        console.log(result);
+
+        if(result != '0'){
+            return 'success';
+        }
+
+    }else{
+        console.log('Check failed, not changing email..');
+        return 'failure';
+    }
+
+    return 'failure';
+
+}
+
 /**
  * Workout methods
  * 
@@ -197,6 +222,15 @@ function dbChangePassword(newPassword, username){
     })
 }
 
+function dbChangeEmail(newEmail, username){
+    return new Promise(function(resolve, reject) {
+        const sql = 'UPDATE users SET email = ? WHERE username = ?';
+        getDbPool().query(sql, [newEmail, username], (err, results) => {
+            resolve(results.affectedRows);
+        })
+    })
+}
+
 
 function dbInsertWorkout(workout){
     return new Promise(function(resolve, reject) {
@@ -230,6 +264,7 @@ module.exports = {
     registerUser: registerUser,
     login: login,
     changePassword: changePassword,
+    changeEmail: changeEmail,
     fetchWorkoutId: fetchWorkoutId,
     saveNewWorkout: saveNewWorkout,
     fetchOneWorkout: fetchOneWorkout,
