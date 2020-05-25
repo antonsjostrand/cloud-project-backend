@@ -260,6 +260,16 @@ async function saveNewWorkout(workout, authData){
     console.log('updating workout foreign key..');
     workout.userId = user.userId;
 
+    //Calculate the distance of the workout.
+    workout.distance = calcDistance(workout.steps);
+
+    //Calculate the performance of the workout.
+    let previousWorkouts = await dbFetchAllWorkouts(workout.userId);
+    workout = calcPerformance(workout, previousWorkouts);
+
+    console.log('Saving workout!');
+    console.log(workout);
+
     //Save workout
     let result = await dbInsertWorkout(workout);
 
@@ -304,6 +314,68 @@ async function fetchAllWorkouts(authData){
 
     return workouts;
 
+}
+
+/**
+ * Processing methods not exported!
+ * 
+ * 
+ */
+
+function calcDistance(steps){
+    var distance = (steps*78)/100000;
+    return distance;
+}
+
+function calcPerformance(workout, previousWorkouts){
+    var totalDistance = 0;
+    var totalSteps = 0;
+    var meanDistance = 0;
+    var meanSteps = 0;
+    var performanceDistance = 0;
+    var performanceSteps = 0;
+
+    //Calculate average distance and steps
+    if(previousWorkouts != undefined){
+        console.log('User har previous workouts..');
+
+        for(var i = 0; i < previousWorkouts.length; i++){
+            console.log('Previous distance: ', previousWorkouts[i].distance);
+            console.log('Previous steps: ', previousWorkouts[i].steps);
+            totalDistance += previousWorkouts[i].distance;
+            totalSteps += previousWorkouts[i].steps;
+        }
+
+        console.log('Total distance: ', totalDistance);
+        console.log('Total steps:', totalSteps);
+
+        meanDistance = totalDistance/previousWorkouts.length;
+        meanSteps = totalSteps/previousWorkouts.length;
+
+        console.log('Mean distance: ', meanDistance);
+        console.log('Mean steps: ', meanSteps);
+
+        performanceDistance = parseFloat(workout.distance)/parseFloat(meanDistance);
+        performanceSteps = parseInt(workout.steps)/parseInt(meanSteps);
+        
+        
+    }else{
+        //First workout, therefore the performance for each will be set to 1.
+        performanceDistance = 1;
+        performanceSteps = 1;
+    }
+
+    //round the values
+    performanceDistance = Math.round(performanceDistance * 100)/100;
+    performanceSteps = Math.round(performanceSteps*100)/100;
+
+    workout.distPerformance = performanceDistance;
+    workout.stepsPerformance = performanceSteps;
+
+    console.log('Performance distance: ', performanceDistance);
+    console.log('Performance steps: ', performanceSteps);
+
+    return workout;
 }
 
 /**
@@ -372,8 +444,8 @@ function dbIsUsernameUnique(username){
         const sql = "SELECT COUNT(*) AS userCount FROM users WHERE username = ?";
         getDbPool().query(sql, username, (err, results) => {
             resolve(results[0].userCount);
-        })
-    })
+        });
+    });
 }
 
 function dbIsAdmin(userData){
@@ -381,7 +453,7 @@ function dbIsAdmin(userData){
         const sql = "SELECT privilege FROM users WHERE username = ? AND password = ?";
         getDbPool().query(sql, [userData.username, userData.password], (err, results) => {
             resolve(results[0]);
-        })
+        });
     });
 }
 
@@ -390,7 +462,7 @@ function dbAdminChangePassword(newPassword, userId){
         const sql = "UPDATE users SET password = ? WHERE userId = ?";
         getDbPool().query(sql, [newPassword, userId], (err, results) => {
             resolve(results.affectedRows);
-        })
+        });
     });
 }
 
@@ -399,7 +471,7 @@ function dbAdminChangeEmail(newEmail, userId){
         const sql = "UPDATE users SET email = ? WHERE userId = ?";
         getDbPool().query(sql, [newEmail, userId], (err, results) => {
             resolve(results.affectedRows);
-        })
+        });
     });
 }
 
@@ -408,7 +480,7 @@ function dbAdminChangePrivilege(newPrivilege, userId){
         const sql = "UPDATE users SET privilege = ? WHERE userId = ?";
         getDbPool().query(sql, [newPrivilege, userId], (err, results) => {
             resolve(results.affectedRows);
-        })
+        });
     });
 }
 
@@ -417,8 +489,8 @@ function dbChangePassword(newPassword, username){
         const sql = 'UPDATE users SET password = ? WHERE username = ?';
         getDbPool().query(sql, [newPassword, username], (err, results) => {
             resolve(results.affectedRows);
-        })
-    })
+        });
+    });
 }
 
 function dbChangeEmail(newEmail, username){
@@ -426,8 +498,8 @@ function dbChangeEmail(newEmail, username){
         const sql = 'UPDATE users SET email = ? WHERE username = ?';
         getDbPool().query(sql, [newEmail, username], (err, results) => {
             resolve(results.affectedRows);
-        })
-    })
+        });
+    });
 }
 
 
@@ -436,8 +508,8 @@ function dbInsertWorkout(workout){
         const sql = 'INSERT INTO workouts SET ?';
         getDbPool().query(sql, workout, (err, results) => {
             resolve(results.insertId);
-        })
-    })
+        });
+    });
 }
 
 function dbFetchWorkout(id){
@@ -454,8 +526,8 @@ function dbFetchAllWorkouts(userId){
         const sql = 'SELECT * FROM workouts WHERE userId=?';
         getDbPool().query(sql, userId, (err, results) => {
             resolve(results);
-        })
-    })
+        });
+    });
 }
 
 module.exports = {

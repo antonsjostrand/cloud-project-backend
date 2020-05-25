@@ -484,7 +484,7 @@ app.post('/workout', middleware.ensureToken, async(req, res) => {
     let status = await database.saveNewWorkout(workout, authenticationData);
 
     if(status === 'success'){
-        console.log('User created!')
+        console.log('Workout created!')
         res.json({status: status, message: 'workout saved', authData: authenticationData});
     }else{
         res.sendStatus(400);
@@ -502,13 +502,16 @@ app.get('/workout', middleware.ensureToken, async(req, res) => {
 
     //Verify the token
     console.log('Verifying token..');
+    console.log('Token: ', req.token);
     jwt.verify(req.token, secretKey, (err, authData) => {
         if(err) {
             //Token error
             res.sendStatus(403);
         } else {
             //Token verified proceed to insert new workout!
+            console.log('Token verified..');
             authenticationData = authData;
+            console.log(authenticationData);
         }
     });
 
