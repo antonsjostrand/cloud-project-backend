@@ -68,13 +68,21 @@ app.post('/register', async(req, res) => {
     //ssn, username, password, email, privilege
     let newUser = req.body;
 
-    let status = await database.registerUser(newUser);
-    if(status === 'success'){
-        console.log('User created!')
-        res.json({status: status, message: 'user created'});
+    //Check so that username is unique
+    let uniqueUsername = await database.isUsernameUnique(newUser.username);
+
+    if(uniqueUsername == 'failure'){
+        res.sendStatus(400)
     }else{
-        res.sendStatus(400);
+        let status = await database.registerUser(newUser);
+        if(status === 'success'){
+            console.log('User created!')
+            res.json({status: status, message: 'user created'});
+        }else{
+            res.sendStatus(400);
+        }
     }
+
 
 });
 

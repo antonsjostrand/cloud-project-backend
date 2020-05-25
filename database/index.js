@@ -36,6 +36,21 @@ async function registerUser(newUser){
     }
 }
 
+//Check if username is unique
+async function isUsernameUnique(username){
+    console.log('Checking if username is unique..');
+
+    const result = await dbIsUsernameUnique(username);
+
+    if(result == '0'){
+        console.log('Username is unique!');
+        return 'success';
+    }else{
+        console.log('Username is not unique..');
+        return 'failure';
+    }
+}
+
 //Login method used to validate credentials of the user
 async function login(userCredentials){
     console.log(userCredentials);
@@ -352,6 +367,15 @@ function dbDeleteUser(userId){
     })
 }
 
+function dbIsUsernameUnique(username){
+    return new Promise(function(resolve, reject) {
+        const sql = "SELECT COUNT(*) AS userCount FROM users WHERE username = ?";
+        getDbPool().query(sql, username, (err, results) => {
+            resolve(results[0].userCount);
+        })
+    })
+}
+
 function dbIsAdmin(userData){
     return new Promise(function(resolve, reject){
         const sql = "SELECT privilege FROM users WHERE username = ? AND password = ?";
@@ -441,6 +465,7 @@ module.exports = {
     registerUser: registerUser,
     login: login,
     isAdmin: isAdmin,
+    isUsernameUnique: isUsernameUnique,
     deleteUser: deleteUser,
     changePassword: changePassword,
     changeEmail: changeEmail,
