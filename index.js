@@ -296,6 +296,153 @@ app.delete('/user', middleware.ensureToken, async(req, res) => {
 
 })
 
+/**
+ * Endpoint used by admins to change the password for a user
+ * Needs the following data in json format:
+ * Needs the following data in json format:
+ * @json "userId": 1
+ * @json "newPassword": "newpassword"
+ */
+app.post('/admin/password', middleware.ensureToken, async(req, res) => {
+    var authenticationData = '';
+    var sameUser = false;
+
+    //Verify the token
+    jwt.verify(req.token, secretKey, (err, authData) => {
+        if(err) {
+            //Token error
+            res.sendStatus(403);
+        } else {
+            //Token verified proceed to change password!
+            authenticationData = authData;
+        }
+    });
+
+    //Verify that the user is indeed an admin.
+    let result = await database.isAdmin(authenticationData.user);
+
+    let user = await database.fetchUser(authenticationData.user);
+
+    //If the admin changes his own password we need a new token.
+    if(user.userId == req.body.userId){
+        console.log('Admin changing its own password..');
+        sameUser = true;
+    }
+
+    //Change the password
+    if(result === 'success'){
+        let result = await database.adminChangePassword(req.body.userId, req.body.newPassword);
+        if(result === 'success'){
+            if(sameUser){
+
+                //Create new token with the new password
+                let user = {};
+                user.username = authenticationData.user.username;
+                user.password = req.body.newPassword;
+
+                jwt.sign({user: user}, secretKey,  {expiresIn: '10h'}, (err, token) => {
+                    res.json({
+                        message: 'New token due to admin changing his own password',
+                        token: token
+                    })
+                });
+            }else{
+                res.json({
+                    message: 'User password changed',
+                    userId: req.body.userId
+                });
+            }
+            
+        }else{
+            res.sendStatus(405);
+        }
+    }else{
+        res.sendStatus(403);
+    }
+
+})
+
+
+ /**
+  * Endpoint used by admins to change the email of a user
+  * Needs the following data in json format:
+  * @json "userId": 1
+  * @json "newEmail": "newemail"
+  */
+ app.post('/admin/email', middleware.ensureToken, async(req, res) => {
+    var authenticationData;
+
+    //Verify the token
+    jwt.verify(req.token, secretKey, (err, authData) => {
+        if(err) {
+            //Token error
+            res.sendStatus(403);
+        } else {
+            //Token verified proceed to change password!
+            authenticationData = authData;
+        }
+    });
+
+    //Verify that the user is indeed an admin.
+    let result = await database.isAdmin(authenticationData.user);
+
+    if(result === 'success'){
+        let result = await database.adminChangeEmail(req.body.userId, req.body.newEmail);
+        if(result === 'success'){
+            res.json({
+                message: 'User email changed',
+                userId: req.body.userId
+            });
+        }else{
+            res.sendStatus(405);
+        }
+    }else{
+        res.sendStatus(403);
+    }
+    
+
+})
+
+/**
+ * Endpoint used by admins to change the privilege of a user.
+ * Needs the following data in json format:
+ * @json "userId": 1
+ * @json "privilege": 1
+ * 
+ */
+app.post('/admin/privilege', middleware.ensureToken, async(req, res) => {
+    var authenticationData;
+
+    //Verify the token
+    jwt.verify(req.token, secretKey, (err, authData) => {
+        if(err) {
+            //Token error
+            res.sendStatus(403);
+        } else {
+            //Token verified proceed to change password!
+            authenticationData = authData;
+        }
+    });
+
+    //Verify that the user is indeed an admin.
+    let result = await database.isAdmin(authenticationData.user);
+
+    if(result === 'success'){
+        let result = await database.adminChangePrivilege(req.body.userId, req.body.newPrivilege);
+        if(result === 'success'){
+            res.json({
+                message: 'User privilege changed',
+                userId: req.body.userId
+            });
+        }else{
+            res.sendStatus(405);
+        }
+    }else{
+        res.sendStatus(403);
+    }
+
+})
+
  /**
   * Workout endpoints
   * 

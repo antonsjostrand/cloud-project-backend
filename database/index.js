@@ -23,10 +23,6 @@ function getDbPool(){
 * User methods
 */
 
-function fetchUserId(){
-
-}
-
 //Register new user
 async function registerUser(newUser){
     console.log('Insert: ' + newUser);
@@ -45,7 +41,10 @@ async function login(userCredentials){
     console.log(userCredentials);
     const result = await dbFetchUser(userCredentials);
     console.log('Result: ' + result);
-
+    
+    if(result == undefined){
+        return 'failure';
+    }
     if(result.username === userCredentials.username){
         return result;
     }else {
@@ -55,7 +54,7 @@ async function login(userCredentials){
 
 /**
  * Configuration methods
- * 
+ * For users
  */
 async function changePassword(data){
     console.log(data);
@@ -115,6 +114,14 @@ async function changeEmail(data){
  * 
  */
 
+ async function fetchUser(userData){
+     console.log('Fetching specific user..');
+
+     let result = await dbFetchUser(userData);
+
+     return result;
+ }
+
  async function fetchAllUsers(){
     console.log('Fetching all users..');
 
@@ -124,25 +131,74 @@ async function changeEmail(data){
  }
 
  async function deleteUser(userId){
-     console.log('Attempting to delete user..');
+    console.log('Attempting to delete user..', userId);
 
-     //First delete the workouts belonging to the user.
-     let result = await dbDeleteWorkout(userId);
+    //Check if user has workouts
+    let result = await dbUserHasWorkouts(userId);
+    console.log('User has workout results');
+    console.log(result);
 
-     if(result != '0'){
-        console.log('Workouts deleted, deleting user..');
-        let result = await dbDeleteUser(userId);
+    if(result != '0'){
+        console.log('User has workouts.. deleting them..');
+        //First delete the workouts belonging to the user.
+        await dbDeleteWorkout(userId);
+    }
 
-        if(result != '0'){
-            console.log('User deleted..');
-            return 'success';
-        }else{
-            return 'failure';
-        }
+    console.log('Eventual workouts deleted, deleting user..');
+    result = await dbDeleteUser(userId);
 
-     }else{
+    console.log('Deleted user results');
+    console.log(result);
+
+    if(result != '0'){
+        console.log('User deleted..');
+        return 'success';
+    }else{
         return 'failure';
-     }
+    }
+
+ }
+
+ async function adminChangePassword(userId, newPassword){
+    console.log('Admin changing user ', userId, ' password to: ', newPassword);
+
+    let result = await dbAdminChangePassword(newPassword, userId);
+
+    if(result != '0'){
+        console.log('Password changed..');
+        return 'success';
+    }else{
+        console.log('Password not changed..');
+        return 'failure';
+    }
+ }
+
+ async function adminChangeEmail(userId, newEmail){
+    console.log('Admin changing user ', userId, ' email to: ', newEmail);
+
+    let result = await dbAdminChangeEmail(newEmail, userId);
+
+    if(result != '0'){
+        console.log('Email changed..');
+        return 'success';
+    }else{
+        console.log('Email not changed..');
+        return 'failure';
+    }
+ }
+
+ async function adminChangePrivilege(userId, newPrivilege){
+    console.log('Admin changing user ', userId, ' privilege to: ', newPrivilege);
+
+    let result = await dbAdminChangePrivilege(newPrivilege, userId);
+
+    if(result != '0'){
+        console.log('Privilege changed..');
+        return 'success';
+    }else{
+        console.log('Privilege not changed..');
+        return 'failure';
+    }
  }
 
  async function isAdmin(userData){
@@ -269,6 +325,15 @@ function dbInsertUser(newUser){
     })
 }
 
+function dbUserHasWorkouts(userId){
+    return new Promise(function(resolve, reject) {
+        const sql = 'SELECT COUNT(workoutId) AS workoutCount FROM workouts WHERE userId = ?';
+        getDbPool().query(sql, userId, (err, results) => {
+            resolve(results[0].workoutCount);
+        })
+    })
+}
+
 function dbDeleteWorkout(userId){
     return new Promise(function(resolve, reject){
         const sql = 'DELETE FROM workouts WHERE userId = ?';
@@ -293,7 +358,34 @@ function dbIsAdmin(userData){
         getDbPool().query(sql, [userData.username, userData.password], (err, results) => {
             resolve(results[0]);
         })
-    })
+    });
+}
+
+function dbAdminChangePassword(newPassword, userId){
+    return new Promise(function(resolve, reject) {
+        const sql = "UPDATE users SET password = ? WHERE userId = ?";
+        getDbPool().query(sql, [newPassword, userId], (err, results) => {
+            resolve(results.affectedRows);
+        })
+    });
+}
+
+function dbAdminChangeEmail(newEmail, userId){
+    return new Promise(function(resolve, reject) {
+        const sql = "UPDATE users SET email = ? WHERE userId = ?";
+        getDbPool().query(sql, [newEmail, userId], (err, results) => {
+            resolve(results.affectedRows);
+        })
+    });
+}
+
+function dbAdminChangePrivilege(newPrivilege, userId){
+    return new Promise(function(resolve, reject) {
+        const sql = "UPDATE users SET privilege = ? WHERE userId = ?";
+        getDbPool().query(sql, [newPrivilege, userId], (err, results) => {
+            resolve(results.affectedRows);
+        })
+    });
 }
 
 function dbChangePassword(newPassword, username){
@@ -343,13 +435,16 @@ function dbFetchAllWorkouts(userId){
 }
 
 module.exports = {
-    fetchUserId: fetchUserId,
+    adminChangeEmail: adminChangeEmail,
+    adminChangePassword: adminChangePassword,
+    adminChangePrivilege: adminChangePrivilege,
     registerUser: registerUser,
     login: login,
     isAdmin: isAdmin,
     deleteUser: deleteUser,
     changePassword: changePassword,
     changeEmail: changeEmail,
+    fetchUser: fetchUser,
     fetchAllUsers: fetchAllUsers,
     saveNewWorkout: saveNewWorkout,
     fetchOneWorkout: fetchOneWorkout,
