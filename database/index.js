@@ -281,10 +281,14 @@ async function saveNewWorkout(workout, authData){
         let returnValues = {};
         returnValues.status = 'success';
         returnValues.distance = workoutDistance;
+
+        return returnValues;
     }else{
         let returnValues = {};
         returnValues.status = 'failure';
         returnValues.distance = 0;
+
+        return returnValues;
     }
 }
 
