@@ -33,11 +33,6 @@ function ensureToken(req, res, next){
     }
 }
 
-function test(variable){
-    console.log("HALLOJ! " + variable);
-}
-
 module.exports = {
     ensureToken: ensureToken,
-    test: test
 };

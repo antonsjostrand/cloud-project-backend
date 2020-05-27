@@ -322,11 +322,13 @@ async function fetchAllWorkouts(authData){
  * 
  */
 
+ //Function used to calculate the distance
 function calcDistance(steps){
     var distance = (steps*78)/100000;
     return distance;
 }
 
+//Function used to calculate the performance of a workout compared to previous workouts.
 function calcPerformance(workout, previousWorkouts){
     var totalDistance = 0;
     var totalSteps = 0;
@@ -336,12 +338,10 @@ function calcPerformance(workout, previousWorkouts){
     var performanceSteps = 0;
 
     //Calculate average distance and steps
-    if(previousWorkouts != undefined){
+    if(previousWorkouts.length != 0){
         console.log('User har previous workouts..');
 
         for(var i = 0; i < previousWorkouts.length; i++){
-            console.log('Previous distance: ', previousWorkouts[i].distance);
-            console.log('Previous steps: ', previousWorkouts[i].steps);
             totalDistance += previousWorkouts[i].distance;
             totalSteps += previousWorkouts[i].steps;
         }
