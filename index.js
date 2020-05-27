@@ -483,9 +483,9 @@ app.post('/workout', middleware.ensureToken, async(req, res) => {
 
     let status = await database.saveNewWorkout(workout, authenticationData);
 
-    if(status === 'success'){
+    if(status.status === 'success'){
         console.log('Workout created!')
-        res.json({status: status, message: 'workout saved'});
+        res.json({status: status, message: 'workout saved', distance: status.distance});
     }else{
         res.sendStatus(400);
     }

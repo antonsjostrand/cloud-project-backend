@@ -262,6 +262,7 @@ async function saveNewWorkout(workout, authData){
 
     //Calculate the distance of the workout.
     workout.distance = calcDistance(workout.steps);
+    let workoutDistance = workout.distance;
 
     //Calculate the performance of the workout.
     let previousWorkouts = await dbFetchAllWorkouts(workout.userId);
@@ -277,9 +278,13 @@ async function saveNewWorkout(workout, authData){
     console.log(result);
     
     if(result != undefined){
-        return 'success';
+        let returnValues = {};
+        returnValues.status = 'success';
+        returnValues.distance = workoutDistance;
     }else{
-        return 'failure';
+        let returnValues = {};
+        returnValues.status = 'failure';
+        returnValues.distance = 0;
     }
 }
 
