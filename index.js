@@ -118,14 +118,6 @@ app.post('/login', async(req, res) => {
 });
 
 /**
- * Logout endpoint, should clear the token when implemented.
- * 
- */
-app.post('/logout', async(req, res) =>{
-
-});
-
-/**
  * Configuration endpoints
  * These endpoints are used to alter settings of the users.
  */

@@ -9,7 +9,7 @@ CREATE USER table:
 CREATE TABLE users (userId INT NOT NULL AUTO_INCREMENT, ssn varchar(10) NOT NULL, username varchar(50) NOT NULL, password varchar(50) NOT NULL, email varchar(50) NOT NULL, privilege INT NOT NULL, PRIMARY KEY (userId));
 
 CREATE WORKOUT table:
-CREATE TABLE workouts (workoutId INT NOT NULL AUTO_INCREMENT, distance FLOAT NOT NULL, steps INT NOT NULL, time varchar(6) NOT NULL, userId INT NOT NULL, PRIMARY KEY (workoutId), FOREIGN KEY (userId) REFERENCES users(userId));
+CREATE TABLE workouts (workoutId INT NOT NULL AUTO_INCREMENT, distance FLOAT NOT NULL, steps INT NOT NULL, time varchar(6) NOT NULL, userId INT NOT NULL, distPerformance FLOAT NOT NULL, stepsPerformance FLOAT NOT NULL, PRIMARY KEY (workoutId), FOREIGN KEY (userId) REFERENCES users(userId));
 
 Needed environment variables when creating cloud run service:
 SECRET_KEY: 18ba9431-8380-4b09-90e7-590e66445d79
